@@ -155,6 +155,40 @@ async def delete_todo_for_user(
     save_data(data)
     return {"message": "Todo deleted successfully"}
 
+@app.put(
+    "/users/{username}/rename/{new_username}",
+    summary="Rename a user",
+    description="Renames a user from their current username to a new username. \n\nPotential error responses:\n- 404 if the current `username` is not found.\n- 409 if the `new_username` already exists.",
+    tags=["Users"],
+    response_model=Dict[str, str]
+)
+async def rename_user(
+    username: str = Path(..., description="The current username of the user to be renamed."),
+    new_username: str = Path(..., description="The desired new username.")
+):
+    """
+    Rename an existing user.
+
+    - **username**: The current username of the user to be renamed.
+    - **new_username**: The desired new username for the user.
+
+    This endpoint will return a 404 error if the current username is not found,
+    and a 409 error if the new username already exists.
+    """
+    data = load_data()
+
+    if username not in data:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if new_username in data:
+        raise HTTPException(status_code=409, detail="New username already exists")
+
+    data[new_username] = data[username]
+    del data[username]
+    save_data(data)
+
+    return {"message": "Username renamed successfully"}
+
 @app.get("/", summary="Root path", include_in_schema=False)
 async def root():
     """
